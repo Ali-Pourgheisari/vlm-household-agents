@@ -1,0 +1,34 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Model downloads and local caches
+models/
+model_cache/
+hf_cache/
+ollama/
+*.gguf
+*.safetensors
+
+# Generated outputs and large logs
+results/*
+!results/.gitkeep
+environment_test/
+logs/
+*.log
+*.jsonl
