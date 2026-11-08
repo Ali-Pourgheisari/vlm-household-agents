@@ -21,13 +21,17 @@ and Git history are deliberately not copied into this repository.
 ## Current progress
 
 - AI2-THOR rendered screenshots and executed a rotation.
+- A scripted pickup succeeded on November 5, 2026: a credit card was picked up
+  in FloorPlan1, confirmed by object metadata and inventory.
 - LLaVA 7B processed a simulator image through Ollama.
 - The first two-task AsgardBench sanity check had **0/2 successes**.
-- The responses described scenes but contained no usable actions.
-- The cause remains under investigation.
+- A custom prompt workaround produced `Action: OPEN Fridge`, accepted by the
+  unchanged benchmark parser. That model-generated action was not executed.
 
-There is currently no claim of successful autonomous task completion or model
-training.
+The [investigation report](reports/ollama_llava_action_diagnostic_2026-11-01.md)
+records the diagnostic findings. The next step is to use actual simulator
+object identifiers, execute model-selected actions, and rerun the sanity check.
+Autonomous task completion and model training have not been demonstrated.
 
 ## Installation and reproducibility
 
@@ -70,6 +74,10 @@ xvfb-run -a uv run --project /data/5pourghe/AsgardBench \
 # Send environment_test/01_before.png to Ollama's OpenAI-compatible endpoint.
 uv run --project /data/5pourghe/AsgardBench \
   python scripts/test_vision.py
+
+# Pick up a visible object and verify simulator inventory (no model inference).
+xvfb-run -a uv run --project /data/5pourghe/AsgardBench \
+  python scripts/test_pickup.py
 ```
 
 The environment script saves screenshots to
@@ -101,8 +109,18 @@ The benchmark writes task traces and `test_results.json` below
 `AsgardBench/Test/magt_benchmark_sanity/`. Do not run the full benchmark unless
 you intentionally choose to do so.
 
-## Limitations
+## Investigation and limitations
 
-The initial sanity-check responses were descriptive rather than executable,
-and both tasks failed. The reason is not yet established. Results should not
-be interpreted as evidence of autonomous completion or training.
+The initial sanity-check responses described scenes without usable actions.
+Follow-up experiments identified request compatibility, context handling,
+output limits, and object-vocabulary adherence as separate issues. A compact
+output contract with explicit native context/output settings produced one
+parser-accepted action; it has not been integrated into the benchmark.
+
+See the [investigation report](reports/ollama_llava_action_diagnostic_2026-11-01.md)
+for results and evidence limitations. The one-off diagnostic scripts were
+removed because they depended on local, ignored experiment artifacts. The
+three retained scripts check rendering/movement, image inference, and scripted
+pickup; none runs an autonomous model-controlled task loop or trains a model.
+
+Generated screenshots and results remain local and ignored by Git.
