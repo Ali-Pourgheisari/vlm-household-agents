@@ -9,5 +9,5 @@ def save(path, data):
 def state(obj):
     return {key: obj.get(key) for key in (
         "objectId", "objectType", "visible", "distance", "openable", "isOpen",
-        "pickupable", "isPickedUp",
+        "pickupable", "isPickedUp", "toggleable", "isToggled",
     )}

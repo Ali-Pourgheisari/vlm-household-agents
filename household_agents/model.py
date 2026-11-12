@@ -8,6 +8,7 @@ import sys
 import httpx
 
 from .artifacts import save
+from .navigation import NAVIGATION
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "AsgardBench"))
@@ -33,7 +34,7 @@ def output_schema(choices):
     }
 
 
-def validate_response(raw, choices):
+def decode_response_object(raw, required):
     if not raw.get("done") or raw.get("done_reason") != "stop":
         raise ValueError("Model response did not finish normally")
     def unique_pairs(pairs):
@@ -47,14 +48,25 @@ def validate_response(raw, choices):
         choice = json.loads(raw.get("message", {}).get("content", ""), object_pairs_hook=unique_pairs)
     except (json.JSONDecodeError, TypeError) as exc:
         raise ValueError(f"Invalid JSON: {exc}") from exc
-    if not isinstance(choice, dict) or set(choice) != {"action", "object"}:
-        raise ValueError("JSON must contain exactly action and object")
+    if not isinstance(choice, dict) or set(choice) != set(required):
+        raise ValueError("JSON must contain exactly " + " and ".join(required))
+    return choice
+
+
+def validate_response(raw, choices):
+    choice = decode_response_object(raw, ("action", "object"))
     action, name = choice["action"], choice["object"]
     if not isinstance(action, str) or action not in choices:
         raise ValueError(f"Unsupported action: {action!r}; choose from {list(choices)}")
     if not isinstance(name, str) or name not in choices[action]:
         raise ValueError(f"Invalid object for {action}: {name!r}; choose from {choices[action]}")
     parser_text = f"Action: {action} {name}"
+    # The external benchmark parser has no navigation actions. Navigation uses
+    # the same strict JSON validation and an explicit local control adapter.
+    if action in NAVIGATION:
+        if name != "None":
+            raise ValueError("Navigation requires object identifier None")
+        return action, name, parser_text
     parsed_action, parsed_name, error = extract_action_object(parser_text, sorted({n for v in choices.values() for n in v}))
     if error or (parsed_action, parsed_name) != (action, name):
         raise ValueError(error or "Parser changed the supplied action/object")
@@ -89,10 +101,11 @@ def make_prompt(task, choices, feedback):
 
 
 class OllamaModel:
-    def __init__(self, model="llava:7b", base_url="http://localhost:11434", request=None):
+    def __init__(self, model="llava:7b", base_url="http://localhost:11434", request=None, prompt_builder=None):
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.request = request or self._request
+        self.prompt_builder = prompt_builder
 
     def _request(self, body, folder):
         with httpx.Client(timeout=600, transport=httpx.HTTPTransport(retries=0)) as client:
@@ -107,14 +120,14 @@ class OllamaModel:
                 raise RuntimeError(raw["error"])
             return raw
 
-    def choose(self, task, choices, feedback, folder):
-        prompt = make_prompt(task, choices, feedback)
+    def image_response(self, prompt, schema, folder):
+        """Send one image with a caller-owned schema and preserve request evidence."""
         (folder / "prompt.txt").write_text(prompt + "\n")
         image_bytes = (folder / "before.png").read_bytes()
         body = {"model": self.model,
                 "messages": [{"role": "user", "content": prompt,
                               "images": [base64.b64encode(image_bytes).decode()]}],
-                "format": output_schema(choices),
+                "format": schema,
                 "options": {"num_ctx": 16384, "num_predict": 1024, "temperature": 0, "top_p": 1},
                 "stream": False, "keep_alive": "2m"}
         save(folder / "request.json", {**body, "messages": [{"role": "user", "content": prompt,
@@ -123,11 +136,18 @@ class OllamaModel:
         save(folder / "raw_response.json", raw)
         text = raw.get("message", {}).get("content", "")
         (folder / "response.txt").write_text(text)
+        return raw
+
+    def choose(self, task, choices, feedback, folder):
+        prompt = (self.prompt_builder or make_prompt)(task, choices, feedback)
+        raw = self.image_response(prompt, output_schema(choices), folder)
+        text = raw.get("message", {}).get("content", "")
         usage = {key: raw.get(key) for key in ("prompt_eval_count", "eval_count", "done", "done_reason")}
         try:
             action, name, parser_text = validate_response(raw, choices)
         except ValueError as exc:
             raise OutputValidationError(str(exc), text, usage) from exc
-        parsed = {"action": action, "object": name, "error": None, "parser_input": parser_text}
+        parsed = {"action": action, "object": name, "error": None, "parser_input": parser_text,
+                  "parser": "local_navigation" if action in NAVIGATION else "asgardbench"}
         save(folder / "parsed_action.json", parsed)
         return {"model_response": text, "usage": usage, "parsed": parsed}
