@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -11,7 +12,10 @@ from .artifacts import save
 from .navigation import NAVIGATION
 
 sys.dont_write_bytecode = True
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "AsgardBench"))
+ASGARDBENCH_DIR = Path(os.environ.get(
+    "ASGARDBENCH_DIR", str(Path(__file__).resolve().parents[4] / "AsgardBench")
+)).expanduser().resolve()
+sys.path.insert(0, str(ASGARDBENCH_DIR))
 from AsgardBench.Model.prompt_templates import PromptParams, render_prompt, extract_action_object
 from AsgardBench.Utils.config_utils import EvaluationConfig
 

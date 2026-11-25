@@ -1383,3 +1383,160 @@ an exact original date is unavailable, the entry says so.
 - Uses the connected GitHub app and an expected-head, non-forced branch update.
   The publication commit includes this entry; historical statements that earlier
   tasks were uncommitted/unpublished describe their state at that time.
+
+## November 12, 2026 — Interactive screenshot replay
+
+- User requested an interactive view of every task step. Built a separate static
+  Sites viewer at `/data/5pourghe/sites/household-agent-replay` from preserved
+  November 12 results; no new model inference or simulator actions were run.
+- Includes both official sanity tasks, all 15 assisted-start custom trials, and
+  four original-start custom trials: 21 episodes, 104 decisions, including both
+  failed custom episodes and every rejected/failed decision. Original screenshot
+  bytes are retained and deduplicated into 101 PNG assets, with source-relative
+  paths and SHA-256 hashes in `dist/evidence-manifest.json`.
+- Custom decisions have before/after views. Official screenshots are explicitly
+  pre-action captures; the next model-input image is labeled separately. No final
+  official post-action screenshot exists, and none was fabricated or substituted.
+- Added task/outcome filters, search, playback/speed controls, keyboard stepping,
+  a full decision timeline, before/after comparison, expanded original images,
+  recorded model outputs/prompts, execution and goal feedback, and trace downloads.
+- Validation: all screenshot hashes and paths, episode/decision counts, failure
+  counts, capture limitations, DOM references, and JavaScript syntax checked.
+  DOM interaction checks exercised all 104 decisions, filtering/search, screenshot
+  modes, playback, and final-view controls. The first test-harness attempt needed
+  a strict-eval export correction; the corrected harness passed. Firefox visual
+  preview failed due to the host's Snap namespace/home restriction, so rendered
+  browser QA remains unverified. Data and interaction checks passed independently.
+- Publishing tooling initially lacked Node; downloaded checksum-verified Node
+  22.16.0 under the workspace. Source helper pushed the viewer source and packaged
+  the matching archive. Private Sites deployment completed successfully:
+  https://household-agent-replay.closedplatypus2.chatgpt.site
+- Site ID: `appgprj_6af5aa69776c81919a04b035d32e52c5`; source commit:
+  `eaddc2510bb69c425683b42bfe5b40098acc6c86`. Viewer source and assets are separate
+  from the research GitHub repository; this progress entry remains a local change.
+
+
+## November 12, 2026 — Investigate replay access failure
+
+- User reported being unable to open the published replay. Sites reports the
+  deployment active, not disabled, and restricted to the connected owner account
+  alipourgheysari@gmail.com. A direct unauthenticated URL request returned HTTP
+  403 with Cloudflare error 1010; this does not establish the user sees the same
+  failure. Requested the displayed error to distinguish sign-in, edge blocking,
+  and client rendering problems. Access settings were not changed.
+- Created `/data/5pourghe/sites/household-agent-replay-offline.zip` containing
+  the complete static viewer and screenshots, without hosting configuration.
+  Extract and open `household-agent-replay/index.html`; no sign-in or server
+  is needed. ZIP integrity and expected entry point checked.
+- User clarified the symptom is a blank page. Browser-user-agent requests reach
+  the site's private sign-in boundary (HTTP 401); the earlier Cloudflare 1010
+  response was specific to the diagnostic request's non-browser user agent.
+  Authenticated checks using the temporary Sites Bearer header returned HTTP 200
+  for HTML, JavaScript, data, and CSS. Published JavaScript/data/CSS exactly match
+  the validated local files; HTML differs only by an injected Cloudflare script.
+  Deployment and missing source assets are therefore not demonstrated causes.
+  The user's blank-page cause remains unconfirmed; private sign-in/browser
+  interaction is a possible cause, not a verified diagnosis. Provided the offline
+  ZIP as an alternative that does not depend on hosted authentication.
+
+
+## November 12, 2026 — Progress review and proposed priorities
+
+- Reviewed repository status, latest progress entries, README, and both November
+  12 evaluation reports to answer the user’s progress/next-steps question.
+  Git master tracks origin/master at e7b5248; existing local progress additions
+  cover replay publication/access investigation. Offline replay ZIP exists.
+- Confirmed recorded outcomes: official Qwen sanity 2/2 after the context fix;
+  custom assisted starts 14/15 and default starts 3/4. These are distinct
+  protocols and do not establish general reliability. No new tests, inference,
+  simulator actions, or publication were performed during this review.
+- Proposed priorities, not implemented: goal-consistent pickup and inventory
+  recovery, collision/camera-limit handling and off-screen target search; then
+  repeated held-out scene/object evaluation. Keep official baseline and custom
+  agent comparisons separate; full benchmark and adapter remain outstanding.
+- Hosted replay blank-page cause remains unresolved. The varied-goal report’s
+  historical 0/2 sanity statement predates the subsequent official Qwen 2/2
+  report; use the latter for current official baseline status.
+
+
+## November 12, 2026 — Verify Bowl claim against raw pickup evidence
+
+- User questioned the Bowl claim after seeing a successful Mug pickup. Checked
+  original trial summaries, decision 03 simulator command/result, and subsequent
+  feedback for mug_pickup_far_target_left_01 in the 092905 batch: PICKUP Bowl
+  executed successfully; metadata records Bowl isPickedUp true and the goal Mug
+  remained unpicked. Other three Mug trials succeeded. This claim concerns one
+  specific failed trial, not every Mug episode. No new evaluation or code change.
+
+
+## November 12, 2026 — Clarify AsgardBench versus custom action support
+
+- Inspected the installed benchmark Action enum, model parser allowlist, PUT
+  execution checks, and empty-hand helper, plus our custom executor/navigation.
+- Official model parser accepts CLEAN, CLOSE, EMPTY, DRINK, FIND, OPEN, PICKUP,
+  PUT, SLICE, SPRAY, TOGGLE_OFF, TOGGLE_ON. PUT is already supported by
+  AsgardBench; EMPTY refers to liquid. EMPTY_HAND is an internal action, not in
+  that parser allowlist. No model-facing DROP is listed; DropHandObject appears
+  only in a commented-out workaround in the inspected scenario source.
+- Our custom executor exposes OPEN/CLOSE/PICKUP/TOGGLE_ON/TOGGLE_OFF and primitive
+  navigation, without PUT or DROP. Earlier recovery limitation applies to this
+  custom loop, not a lack of PUT in AsgardBench. No implementation or run changes.
+
+
+## November 12, 2026 — Make AsgardBench the main runner; park custom experiments
+
+- User explicitly selected the official AsgardBench runner as the main workflow
+  and requested the custom runner be put away with a durable explanation.
+- Moved the custom household_agents package, 14 Python scripts, and six test
+  modules into experimental/custom_runner/. Preserved the former README as
+  USAGE.md, updated its command locations and links, and added a README recording
+  origin, limitations, the reason for parking it, and explicit resumption guidance.
+  Original custom sources are byte-identical apart from the model module's
+  external-parser dependency path, adjusted for relocation with ASGARDBENCH_DIR
+  override support. Generated outputs in the parked directory are ignored.
+- Replaced the main README with official benchmark setup and usage. Added
+  scripts/run_benchmark.py as a thin launcher of the unchanged external
+  AsgardBench.Model.model_tester, defaulting to the official sanity suite and
+  tested Qwen 16K alias. It preserves supplied endpoint/key settings, otherwise
+  uses isolated local Ollama, creates fresh output roots, records launch metadata
+  without credentials, forwards benchmark options/exit status, and supports
+  preview via --dry-run. There is no custom-loop fallback.
+- Added AGENTS.md instructions to use the official runner and leave custom work
+  parked until explicitly requested. Existing reports, root results, source
+  snapshots, and the separate replay viewer were not moved or rewritten.
+- Validation: 47/47 existing offline regression tests passed after relocation;
+  official runner CLI help passed without simulation/inference. Launcher checks
+  passed for official delegation, forwarded arguments, environment/output
+  isolation, exit-code propagation, refusal to reuse output roots, and dry-run
+  without execution or directory creation. Python syntax, local documentation
+  links, server-script shell syntax, and git diff --check passed. Independent
+  byte comparison confirmed preservation of relocated sources.
+- No new model requests, simulator episodes, full benchmark, model/server changes,
+  commit, or publication. Benchmark checkout remains clean. Existing local
+  progress-log additions were preserved. The next evaluation should use the
+  official launcher; historical custom scores remain separately labeled.
+
+
+## November 25, 2026 — Recover project status from local records
+
+- Reviewed project instructions, README, latest progress entries, official sanity
+  report, and local Git status to recover the stopping point for the user.
+- Latest implementation remains the November 12 switch to official AsgardBench
+  with custom work parked; launcher and relocation are still uncommitted locally.
+  Recorded official baseline remains 2/2 after the context fix; no full benchmark
+  is recorded. Replay hosted blank-page cause remains unresolved.
+- No new tests, inference, simulator runs, commit, or publication performed.
+
+
+## November 25, 2026 — Commit and publish the official-runner switch
+
+- User authorized committing and pushing the pending runner switch to GitHub.
+  Publication includes the official launcher, parked custom sources/tests and
+  usage guide, workflow instructions, README, and accumulated progress entries.
+- Rechecked all 47 existing offline regression tests: passed. Official launcher
+  dry-run and Python syntax checks passed; each removed custom source/test has
+  a preserved relocated counterpart, byte-identical except model.py's documented
+  external dependency path adjustment. Whitespace checks passed.
+- No model inference, simulator episode, full benchmark, or replay-site change.
+  Publishing through the connected GitHub app with a non-forced expected-head
+  update; remote success and local synchronization are verified after publication.

@@ -16,3 +16,15 @@
   remain ignored; never include secrets or base64 image payloads in the log.
 - Keep README.md focused on project purpose, setup, usage, and scope. Put progress
   history and experiment results in `progress.md` and link to it from the README.
+
+## Main runner and parked experiments
+
+- Use the official AsgardBench runner for normal evaluations. The supported
+  entry point is `python3 scripts/run_benchmark.py`, which delegates to the
+  external `AsgardBench.Model.model_tester` without a custom action loop.
+- The custom runner is parked in `experimental/custom_runner/`. Do not resume,
+  expand, or silently fall back to it unless the user explicitly requests it.
+  Read its README for why it exists, why it was put away, and resumption guidance.
+- Keep official benchmark and historical custom-runner results separately
+  labeled; their action abstractions, rules, setups, and goal checks differ.
+- Preserve historical reports, raw results, source snapshots, and replay assets.
